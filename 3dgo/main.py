@@ -19,21 +19,21 @@ class GridDemo(ShowBase):
     def __init__(self, size):
         super().__init__()
         
+        # ========================================== # So I've forgot to add back the comments when I refactored the via ai. 
+        # 1. ENGINE & GRAPHICS SETUP                 # So I'll re do the comments
         # ========================================== #
-        # 1. ENGINE & GRAPHICS SETUP                 #
-        # ========================================== #
-        self.custom_font = self.loader.loadFont("fonts/Montserrat-Regular.ttf")
-        self.background_color = (0.5, 0.5, 0.5)
-        self.setBackgroundColor(self.background_color)
+        self.custom_font = self.loader.loadFont("fonts/Montserrat-Regular.ttf") #I like this font, didn't like the default one
+        self.background_color = (0.5, 0.5, 0.5)                #background color set as gray, so you eyes don't get annihilated.
+        self.setBackgroundColor(self.background_color)         # As there is a funtion to set the background color, we set the color just define via such funtion.
         
-        self.myMaterial = Material()
+        self.myMaterial = Material()                           #This is the Material/shine of the stones (balls as default)
         self.myMaterial.setShininess(16)
         self.myMaterial.setSpecular((0.25, 0.25, 0.25, 1))
         
-        dlight = DirectionalLight('dlight')
+        dlight = DirectionalLight('dlight')       
         dlight.setColor((1, 1, 1, 1))
-        dlnp = self.render.attachNewNode(dlight)
-        dlnp.setHpr(-45, -45, -45)
+        dlnp = self.render.attachNewNode(dlight)  
+        dlnp.setHpr(-45, -45, -45)                
         self.render.setLight(dlnp)
         
         alight = AmbientLight('alight')
@@ -41,14 +41,14 @@ class GridDemo(ShowBase):
         alnp = self.render.attachNewNode(alight)
         self.render.setLight(alnp)
 
-        self.ball_model = self.loader.loadModel("models/sphere.bam")
-        self.black_texture = self.loader.loadTexture("textures/black.png")
-        self.white_texture = self.loader.loadTexture("textures/white.png")
+        self.ball_model = self.loader.loadModel("models/sphere.bam")       #Set the stones model to be the sphere model, for performance you'd like to use the cube,
+        self.black_texture = self.loader.loadTexture("textures/black.png") #(i.e for really big boards change it to cube.bam).
+        self.white_texture = self.loader.loadTexture("textures/white.png") # set the texture of the balls as black and white for the respective players.
 
         # ========================================== #
         # 2. GAME STATE & GRID VARIABLES             #
         # ========================================== #
-        self.initial_size = size
+        self.initial_size = size #
         self.size = "0,0,0"
         self.x_size = 1
         self.y_size = 1
@@ -62,13 +62,13 @@ class GridDemo(ShowBase):
         
         self.current_color = 0  # 0 = black, 1 = white
         self.turn = 1
-        self.pass_count = 0  
-        self.game_ended = False
-        self.match_history = []
+        self.pass_count = 0     # 2 -> game ends as both players pass sequentially
+        self.game_ended = False # when pass_count = 2 then this becomes True and triggers ............
+        self.match_history = [] # For superko and rewind purposes, we saved each and every turn.
         
-        self.nodes = []
+        self.nodes = []         # list of nodes, that is points of the grid
         self.line_nodes = []
-        self.balls = {}
+        self.balls = {}         # balls dict, balls[postion] returns it's node and color.
         
         self.last_plane_action = None
         self.current_plane = -1
@@ -78,11 +78,11 @@ class GridDemo(ShowBase):
         # ========================================== #
         # 3. TIMER VARIABLES                         #
         # ========================================== #
-        self.timer_running = False
+        self.timer_running = False    #By default, no timer it's on.
         self.timer_task = None
         self.timer_mode = "No Timer"
         
-        self.main_time = 0
+        self.main_time = 0            #This all changes by selecting the timer mode and configuring it.
         self.increment = 0
         self.byo_periods = 5
         self.byo_time = 30
@@ -99,10 +99,10 @@ class GridDemo(ShowBase):
         # ========================================== #
         # 4. INITIALIZATION ROUTINES                 #
         # ========================================== #
-        self.camera_control = Camera(self, self.initial_size)
-        self.setup_collision_system()
-        self.disableMouse()
-        self.bind_inputs()
+        self.camera_control = Camera(self, self.initial_size) #We call camera.py and giv ethe size of the board, 
+        self.setup_collision_system() #then we calculate where the exact center point is, then the camera position its update to such center
+        self.disableMouse() #don't remember what this does, check panda3d manual
+        self.bind_inputs()  #don't remember what this does, check panda3d manual
         
         self.extra_gui_elements = {}
         self.help_show = 0
@@ -110,7 +110,7 @@ class GridDemo(ShowBase):
         
         self.setup_gui()
         self.game_over_text = OnscreenText(
-            text="To start, select a grid size and press enter.",
+            text="To start, select a grid size and press enter. e.g (4), (19,19), (10,10,2)",
             pos=(0, 0), scale=0.1, fg=(0, 0, 0, 1), align=TextNode.ACenter, font=self.custom_font
         )
 
@@ -227,28 +227,31 @@ class GridDemo(ShowBase):
     # ========================================== #
     def generate_grid(self, size):
         try:
-            parts = [int(x.strip()) for x in size.split(',')]
-            self.x_size, self.y_size, self.z_size = parts
-
-            # Clear old elements safely
-            for ball_data in list(self.balls.values()):
-                ball_data['node'].removeNode()
+            parts = [int(x.strip()) for x in size.split(',')] #given the entered size (x,y,z), we take the integer just before the ","
+            self.x_size, self.y_size, self.z_size = parts     #at most we have 3 parts, so we give x,y,z to the respective w_size. 
+            #can happen than the user desire to play on a (10,10,10) then it's possible to just do (10) as y and z will just be 10 too.
+            
+            # Clear old elements safely e.i if there is already a grid, we deleted first. then we create a new grid over.
+            for ball_data in list(self.balls.values()):  #Remember that we have balls (stones) and nodes, also a grid for every z level.
+                ball_data['node'].removeNode()           #here we empty the balls
             self.balls.clear()
 
-            for node in self.nodes:
+            for node in self.nodes:                                  #then we take every node and remove them
                 if not node.is_empty():
                     collision_node = node.find("**/+CollisionNode")
                     if collision_node:
                         collision_node.removeNode()
                     node.removeNode()
 
-            for line_node in self.line_nodes:
+            for line_node in self.line_nodes: #this removes the line between nodes, this is for the z value, so each "floor" looks as a 2d go. 
                 line_node.removeNode()
             self.line_nodes = []
             self.nodes = []
 
             # Generate vertices & nodes
-            for x in range(self.x_size):
+            # Lastly, we generate the grid by iterating the size input.
+            # First, we create a node for every position (intersection of the lines), then a collision sphere (to be able to click on it) 
+            for x in range(self.x_size): 
                 for y in range(self.y_size):
                     for z in range(self.z_size):
                         vertex_node = NodePath(f"vertex_{x},{y},{z}")
@@ -262,35 +265,41 @@ class GridDemo(ShowBase):
                         self.nodes.append(vertex_node)
 
             # Generate Grid Lines
-            for z in range(self.z_size):
-                lines = LineSegs()
+            # Secondly, we create for every z level a 2d board to help visually
+            for z in range(self.z_size): 
+                lines = LineSegs()      #here we set the size and color of the lines
                 lines.setThickness(1)
                 lines.setColor(1, 1, 1, 1)
-                for y in range(self.y_size):
+                for y in range(self.y_size): #then we draw them.
                     lines.moveTo(0, y, z)
                     lines.drawTo(self.x_size - 1, y, z)
                 for x in range(self.x_size):
                     lines.moveTo(x, 0, z)
                     lines.drawTo(x, self.y_size - 1, z)
                 line_node = self.render.attachNewNode(lines.create())
-                line_node.setAntialias(AntialiasAttrib.M_line)
+                line_node.setAntialias(AntialiasAttrib.M_line) #Antialias to the grid line, it looks waaay better with this.
                 self.line_nodes.append(line_node)
 
-            self.game_over_text.destroy()  
-            self.reset_camera(self.size)
-            self.place_initial_ball()
-            self.custom_grid_color(self.grid_color)
+            self.game_over_text.destroy()  #if the new size it's created after a game finishes, this removes the game over text.
+            self.reset_camera(self.size)   #reset the camera to the new size
+            self.place_initial_ball()      # we put the tiny blue ball that marks the (0,0,0)
+            self.custom_grid_color(self.grid_color) #if we have a custom color it's applied.
         except Exception as e:
             print(f"Error during grid generation: {e}")
             return
-
+    '''
+    This function creates a tiny blue ball using the smiley model (default on panda3d), it's positioned on the (0,0,0)
+    '''
     def place_initial_ball(self): 
-        initial_ball = self.loader.loadModel("smiley")
+        initial_ball = self.loader.loadModel("smiley") 
         initial_ball.setPos(0, 0, 0)
         initial_ball.setTexture(self.loader.loadTexture("textures/blue.png"), 1)
         initial_ball.setScale(0.05)
         initial_ball.reparentTo(self.render)
 
+    '''
+    This function changes the background color of the game, might affect text readability.
+    '''
     def custom_background_color(self, event=None):
         if self.extra_show == 1 and "background_entry" in self.extra_gui_elements:
             text = self.extra_gui_elements["background_entry"].get()
@@ -309,6 +318,9 @@ class GridDemo(ShowBase):
         except ValueError:
             return
 
+    '''
+    This function changes the grid color, this funtion it's called at the grid generation step but also can be called independently to change the color on the fly.
+    '''
     def custom_grid_color(self, event=None):
         if self.extra_show == 1 and "color_entry" in self.extra_gui_elements:
             text = self.extra_gui_elements["color_entry"].get()
@@ -344,11 +356,17 @@ class GridDemo(ShowBase):
         except ValueError:
             return
 
+    '''
+    This function makes so no ball it's visible, by scaling them to have a 0 size. Also hides the gird line (given). this is used for the show only one plane function.
+    '''
     def show_nothing(self):
         for node in self.nodes: node.setScale(0.0)
         for ball_data in self.balls.values(): ball_data['node'].setScale(0.0)
         for line_node in self.line_nodes: line_node.hide()
 
+    '''
+    This resets the visibility of the balls and grids.
+    '''
     def show_everything(self):
         if self.x_size == 1 or self.y_size == 1 or self.z_size == 1: return
         for node in self.nodes: node.setScale(1.0)
@@ -360,33 +378,44 @@ class GridDemo(ShowBase):
         elif self.last_plane_action == 0:
             self.current_plane = (self.current_plane + 1) % self.z_size 
 
+    '''
+    while on 'show_one_floor' mode, this funtion moves the plane that's shown 1 floor up.
+    '''
     def plane_up(self):
         self.show_one_floor(1, self.current_plane)
         self.last_plane_action = 1
         
+    '''
+    while on 'show_one_floor' mode, this funtion moves the plane that's shown 1 floor down.
+    '''  
     def plane_down(self):
         self.show_one_floor(0, self.current_plane)
         self.last_plane_action = 0
 
+    '''
+    Given a grid, this function makes so only one floor it's visible, the visible floor can be changed by the funtions plane_up and plane_down.
+    '''
     def show_one_floor(self, up_or_down, current_z):
-        if up_or_down == 0:
-            if current_z is not None:
+        if up_or_down == 0:                        #By default, we don't know if we have used plane_up or plane_down, current_z it's the only floor we are looking at.
+            if current_z is not None:              #
                 if not hasattr(self, 'current_plane'): self.current_plane = 0
                 else: self.current_plane = (self.current_plane - 1) % self.z_size
-                z = self.current_plane
+                z = self.current_plane 
             else:
-                z = current_z
+                z = current_z #If we only have one floor, then this funtion should do nothing.
                 if not (0 <= z < self.z_size): return
-        else:
+        else: #If we already used this function, then we have do plane_up or down.
             if current_z is not None:
                 if not hasattr(self, 'current_plane'): self.current_plane = 0
                 else: self.current_plane = (self.current_plane + 1) % self.z_size
                 z = self.current_plane
             else:
-                z = current_z
+                z = current_z #If we only have one floor, then this funtion should do nothing.
                 if not (0 <= z < self.z_size): return
 
-        for node in self.nodes:
+        
+        #for every node,ball and line, if the don't have the proper z then se set them scale to 0 or we hide them.
+        for node in self.nodes:                            
             coords = node.getName().split('_')[1].split(',')
             z_pos = float(coords[2])
             node.setScale(1 if int(z_pos) == z else 0)
@@ -399,7 +428,7 @@ class GridDemo(ShowBase):
             if i == z: line_node.show()
             else: line_node.hide()
 
-    def cut_layer(self):
+    def cut_layer(self): #this is not properly implemented, right now it just takes a given layer and shirnks it (make stones smaller).
         if self.x_size < 3 or self.y_size <= 3 or self.z_size <= 3: return
         biggestaxis = max(self.x_size, self.y_size, self.z_size)
         
@@ -418,18 +447,20 @@ class GridDemo(ShowBase):
                         ball_data['node'].setScale(0.2)
             self.layer_count += 1
         else:
-            self.layer_count = 0
+            self.layer_count = 0 #if only one floor, then we have nothing to do.
             self.show_everything()
 
     # ========================================== #
     # WEIQI / GO LOGIC (RULES & MECHANICS)       #
     # ========================================== #
-    def spawn_model(self, pos):
+    def spawn_model(self, pos):      #given a position, that can be click or writen down, we converit to a integer tuple.
         if self.game_ended: return
         pos_tuple = tuple(int(round(coord)) for coord in pos)
-        if not self.is_legal_move(pos_tuple, self.current_color): return
+        if not self.is_legal_move(pos_tuple, self.current_color): return #we check for legality (suicide, superko).
 
         # Pure placement without double rendering actions
+        # Given the position we just parse, take the model and send it to the render, then put it the proper texture, scale, position, material.
+        # Finally, attachit to the balls dict, balls[postion] returns it's node and color.
         model = self.ball_model.copyTo(self.render)
         texture = self.black_texture if self.current_color == 0 else self.white_texture
         model.setTexture(texture, 1)
@@ -438,15 +469,15 @@ class GridDemo(ShowBase):
         model.setMaterial(self.myMaterial)
         self.balls[pos_tuple] = {'node': model, 'color': self.current_color}
 
-        opponent_color = 1 - self.current_color
-        captured_positions = set()
-        for adj_pos in self.get_adjacent_positions(pos_tuple):
-            if adj_pos in self.balls and self.balls[adj_pos]['color'] == opponent_color:
+        opponent_color = 1 - self.current_color #changes the next ball color as for changing the turn.
+        captured_positions = set() #set of the captured stones, if the positioned stone did captured something.
+        for adj_pos in self.get_adjacent_positions(pos_tuple): #for such, we take a look at the adjacent position of such stone, if there are any stone or group of stones
+            if adj_pos in self.balls and self.balls[adj_pos]['color'] == opponent_color: #that are, by definition, captured, then we take them all and update the set.
                 group = self.get_group(adj_pos, opponent_color)
                 if not self.group_has_liberty(group):
                     captured_positions.update(group)
 
-        if captured_positions:
+        if captured_positions: #if captured_positions it's not empty, then we have to take every stone from the game, also give points to the player who captures.
             for captured_pos in captured_positions:
                 if captured_pos in self.balls:
                     self.balls[captured_pos]['node'].removeNode()
@@ -455,15 +486,17 @@ class GridDemo(ShowBase):
             else: self.black_captures += len(captured_positions)
             self.text_captures.setText(f"Black captures: {self.black_captures}\nWhite captures: {self.white_captures}")
 
-        if self.increment > 0:
-            if self.current_color == 0: self.black_time += self.increment
+        if self.increment > 0: #if we are playing with timer that has increment, then this increases the player that just played it's time.
+            if self.current_color == 0: self.black_time += self.increment 
             else: self.white_time += self.increment
 
-        self.current_color = (self.current_color + 1) % 2
-        self.turn += 1
-        self.pass_count = 0 
+        self.current_color = (self.current_color + 1) % 2 #we update the turn by using Z_2 arithmetic.
+        self.turn += 1 #pass the turn
+        self.pass_count = 0 #reset the pass count, if a player pass, then it set to 1 but if the other plays, then it has to go to 0 if not, the other might pass again 
+        # and trigger the end game event. again, this can only happen when both player pass sequentially.
 
-        self.match_history.append({
+        #put the just played turn into the match history, also we hash it for easy superko detection.
+        self.match_history.append({ 
             'balls': {k: {'color': v['color']} for k, v in self.balls.items()},
             'current_color': self.current_color,
             'turn': self.turn,
@@ -472,7 +505,7 @@ class GridDemo(ShowBase):
             'board_hash': self.get_board_hash()
         })
         
-        self.turn_text.setText(f"Turn: {self.turn}")
+        self.turn_text.setText(f"Turn: {self.turn}") #update the turn text.
         
         if self.timer_mode != "No Timer":
             self.pause_timer()
@@ -485,6 +518,10 @@ class GridDemo(ShowBase):
                 self.white_byo_yomi_time = self.byo_time
                 self.white_byo_yomi_periods = self.byo_periods
 
+    '''
+    This function checks the legality of a play, that is if it's not a sucide or if it is, it's also a capture. also check for superko. In order to do so, we create a new board
+    where our position might or not be legal, the we check if it has liberties (suicide), then if it captures, then we check for superko.
+    '''
     def is_legal_move(self, pos, color):
         pos_tuple = tuple(int(round(coord)) for coord in pos)
         if pos_tuple in self.balls: return False
@@ -517,6 +554,10 @@ class GridDemo(ShowBase):
                 return False
         return True
 
+    
+    '''
+    given a position, we check if suck position it's a stone or a group of stones, we return whatever it is.
+    '''
     def get_virtual_group(self, pos, color, sim_board):
         visited = set()
         group = set()
@@ -553,22 +594,31 @@ class GridDemo(ShowBase):
             to_check.extend(self.get_adjacent_positions(current))
         return group
 
-    def group_has_liberty(self, group):
+    '''
+    Given a group or stone, we check if there are any empty point in it's adjacency (liberties)
+    '''
+    def group_has_liberty(self, group): 
         if not group: return False
         for pos in group:
             for adj in self.get_adjacent_positions(pos):
                 if adj not in self.balls: return True
         return False
 
-    def get_adjacent_positions(self, pos):
+    '''
+    given a position, return the adjacent positions to it as a list.
+    '''
+    def get_adjacent_positions(self, pos): #
         x, y, z = pos
         adj = [(x+1,y,z), (x-1,y,z), (x,y+1,z), (x,y-1,z), (x,y,z+1), (x,y,z-1)]
         return [(ax, ay, az) for ax, ay, az in adj if 0 <= ax < self.x_size and 0 <= ay < self.y_size and 0 <= az < self.z_size]
 
+    '''
+    Hash the actual board, for superko detection.
+    '''
     def get_board_hash(self):
         board_state = sorted((pos, self.balls[pos]['color']) for pos in self.balls)
         return hashlib.md5(str(board_state).encode()).hexdigest()
-
+    
     def pass_turn(self):
         if self.game_ended: return
         self.pass_count += 1
